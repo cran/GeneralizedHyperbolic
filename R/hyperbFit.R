@@ -1,14 +1,27 @@
 ### Function to fit hyperbolic distribution to data
-###
+### DJS 28/7/10
+### CYD 01/04/10
 ### DJS 11/09/06
-hyperbFit <- function(x, freq = NULL, breaks = NULL, paramStart = NULL,
-                      startMethod = "Nelder-Mead", startValues = "BN",
-                      method = "Nelder-Mead", hessian = FALSE,
+hyperbFit <- function(x, freq = NULL, paramStart = NULL,
+                      startMethod = c("Nelder-Mead","BFGS"),
+                      startValues = c("BN","US","FN","SL","MoM"),
+                      criterion = "MLE",
+                      method = c("Nelder-Mead","BFGS","nlm",
+                                 "L-BFGS-B","nlminb","constrOptim"),
                       plots = FALSE, printOut = FALSE,
                       controlBFGS = list(maxit = 200),
-                      controlNM = list(maxit = 1000), maxitNLM = 1500, ...) {
+                      controlNM = list(maxit = 1000), maxitNLM = 1500,
+                      controlLBFGSB = list(maxit = 200),
+                      controlNLMINB = list(),
+                      controlCO = list(), silent = TRUE, ...) {
+
+  startValues <- match.arg(startValues)
+  startMethod <- match.arg(startMethod)
+  method <- match.arg(method)
 
   xName <- paste(deparse(substitute(x), 500), collapse = "\n")
+  ## set default error message
+  errMessage <- ""
 
   if (!is.null(freq)) {
     if (length(freq) != length(x))
@@ -18,124 +31,191 @@ hyperbFit <- function(x, freq = NULL, breaks = NULL, paramStart = NULL,
   }
 
   x <- as.numeric(na.omit(x))
-  startInfo <- hyperbFitStart(x, breaks = breaks,
-                              startValues = startValues,
+  startInfo <- hyperbFitStart(x, startValues = startValues,
                               paramStart = paramStart,
                               startMethodSL = startMethod,
                               startMethodMoM = startMethod, ...)
   paramStart <- startInfo$paramStart
+  ## change paramStart in the log scale of param set number 1 (mu,delta,pi,zeta)
+  paramStart <- as.numeric(hyperbChangePars(2, 1, param = paramStart))
+  if (!(method %in% c("L-BFGS-B","nlminb","constrOptim"))){
+    paramStart <- c(paramStart[1], log(paramStart[2]),
+                    paramStart[3], log(paramStart[4]))
+  }
   svName <- startInfo$svName
   breaks <- startInfo$breaks
   empDens <- startInfo$empDens
   midpoints <- startInfo$midpoints
 
-  llfunc <- function(param) {
-    # This function used to expect (pi, zeta) values.
-    # As a result the old code will be executed.
-    # This also has a habit of breaking due to incorrect delta
-    # values in the new form.
+  ## Set some parameters to help with optimization
+  eps <- 1e-10
 
-    mu <- param[1]
-    delta <- param[2]
-    alpha <- param[3]
-    beta <- param[4]
-
-    hyperbPi <- beta / sqrt(alpha^2 - beta^2)
-    zeta <- delta * sqrt(alpha^2 - beta^2)
-
-    KNu <- besselK(zeta, nu = 1)
-
-    hyperbDens <- (2 * delta * sqrt(1 + hyperbPi^2) * KNu)^(-1) *
-                  exp(-zeta * (sqrt(1 + hyperbPi^2) * sqrt(1 + ((x - mu) /
-                  delta)^2) - hyperbPi * (x - mu) / delta))
-    as.numeric(hyperbDens)
-    -sum(log(hyperbDens))
-  }
-
-  output <- numeric(7)
-  ind <- 1:4
-
-  if (method == "BFGS") {
-    opOut <- optim(paramStart, llfunc, NULL, method = "BFGS",
-                   control = controlBFGS, ...)
-  }
-
-  if (method == "Nelder-Mead") {
-    opOut <- optim(paramStart, llfunc, NULL, method = "Nelder-Mead",
-                   control = controlNM, ...)
-  }
-
-  if (method == "nlm") {
-    ind <- c(2, 1, 5, 4)
-    opOut <- nlm(llfunc, paramStart, iterlim = maxitNLM, ...)
-  }
-
-  param <- as.numeric(opOut[[ind[1]]])[1:4]       # parameter values
-  names(param) <- c("mu", "delta", "alpha", "beta")
-  maxLik <- -(as.numeric(opOut[[ind[2]]]))        # maximum likelihood
-  conv <- as.numeric(opOut[[ind[4]]])             # convergence
-  iter <- as.numeric(opOut[[ind[3]]])[1]          # iterations
-
-  # If there is a hessian to be computed, compute it using the likelihood
-  # at the estimated parameters, this code was borrowed from the fBasics
-  # package, see utils-hessian.R
-
-  if (hessian) {
-    n <- length(param)
-    lloutput <- llfunc(param)
-    eps <- .Machine$double.eps
-
-    # Compute the stepsize:
-    h = eps^(1/3) *
-        apply(as.data.frame(param), 1, function(z) max(abs(z), 1.0e-2))
-    ee = diag(h) # Matrix(diag(h), sparse = TRUE)
-
-    # Compute forward and backward steps:
-    gp = vector(mode = "numeric", length = n)
-    gm = vector(mode = "numeric", length = n)
-
-    for (i in 1:n)
-      gp[i] <- llfunc(param + ee[, i])
-
-    for (i in 1:n)
-      gm[i] <- llfunc(param - ee[, i])
-
-    H = h %*% t(h)
-    Hm = H
-    Hp = H
-
-    # Compute double forward and backward steps:
-    for (i in 1:n) {
-      for (j in  i:n) {
-        Hp[i, j] <- llfunc(param + ee[, i] + ee[, j])
-        Hp[j, i] <- Hp[i, j]
-        Hm[i, j] <- llfunc(param - ee[, i] - ee[, j])
-        Hm[j, i] <- Hm[i, j]
+  if (criterion == "MLE") {
+    if (!(method %in% c("L-BFGS-B","nlminb","constrOptim"))){
+      llfunc <- function(param) {
+        KNu <- besselK(exp(param[4]), nu = 1)
+        hyperbDens <- (2*exp(param[2])* sqrt(1 + param[3]^2)*KNu)^(-1)*
+                      exp(-exp(param[4])* (sqrt(1 + param[3]^2)*
+                      sqrt(1 + ((x - param[1])/exp(param[2]))^2) -
+                      param[3]*(x - param[1])/exp(param[2])))
+        return(-sum(log(hyperbDens)))
+      }
+    } else {
+      llfunc <- function(param) {
+        ## Protect against attempts to make parameters < 0
+        if (param[1] <= eps | param[4] <= eps) return(1e99)
+        KNu <- besselK(param[4], nu = 1)
+        hyperbDens <- (2*param[2]* sqrt(1 + param[3]^2)*KNu)^(-1)*
+                      exp(-param[4]* (sqrt(1 + param[3]^2)*
+                      sqrt(1 + ((x - param[1])/param[2])^2) -
+                      param[3]*(x - param[1])/param[2]))
+        return(-sum(log(hyperbDens)))
       }
     }
 
-    # Compute the Hessian:
-    for (i in 1:n) {
-      for (j in  i:n) {
-        H[i, j] = ((Hp[i, j] - gp[i] - gp[j] + lloutput + lloutput -
-                  gm[i] - gm[j] + Hm[i, j]) / H[i, j]) / 2
-        H[j, i] = H[i, j]
+    output <- numeric(7)
+    ind <- 1:6
+
+    if (method == "BFGS") {
+      if (!silent){
+        cat("paramStart =",
+            paramStart[1], paramStart[2], paramStart[3], paramStart[4],"\n")
+      }
+      tryOpt <- try(optim(paramStart, llfunc, NULL, method = "BFGS",
+                         control = controlBFGS, ...),
+                    silent = silent)
+      if (class(tryOpt) == "try-error"){
+        errMessage <- unclass(tryOpt)
+      } else {
+        optOut <- tryOpt
       }
     }
 
-    colnames(H) <- names(param)
-    rownames(H) <- names(param)
+    if (method == "Nelder-Mead") {
+      if (!silent){
+        cat("paramStart =",
+            paramStart[1], paramStart[2], paramStart[3], paramStart[4],"\n")
+      }
+      tryOpt <- try(optim(paramStart, llfunc, NULL, method = "Nelder-Mead",
+                          control = controlNM, ...),
+                    silent = silent)
+      if (class(tryOpt) == "try-error"){
+        errMessage <- unclass(tryOpt)
+      } else {
+        optOut <- tryOpt
+      }
+    }
 
-    opOut$hessian <- H
+    if (method == "nlm") {
+      if (!silent){
+        cat("paramStart =",
+            paramStart[1], paramStart[2], paramStart[3], paramStart[4],"\n")
+      }
+      ind <- c(2, 1, 5, 4)
+      tryOpt <- try(nlm(llfunc, paramStart, iterlim = maxitNLM, ...),
+                    silent = silent)
+      if (class(tryOpt) == "try-error"){
+        errMessage <- unclass(tryOpt)
+      } else {
+        optOut <- tryOpt
+      }
+    }
+
+    if (method == "L-BFGS-B") {
+      if (!silent){
+        cat("paramStart =",
+            paramStart[1], paramStart[2], paramStart[3], paramStart[4],"\n")
+      }
+      tryOpt <- try(optOut <-
+                    optim(par = paramStart, llfunc, NULL,
+                          method = "L-BFGS-B",
+                          lower = c(-Inf,0,-Inf,0),
+                          control = controlLBFGSB, ...),
+                    silent = silent)
+      if (class(tryOpt) == "try-error"){
+        errMessage <- unclass(tryOpt)
+      } else {
+        optOut <- tryOpt
+      }
+    }
+
+    if (method == "nlminb") {
+      if (!silent){
+        cat("paramStart =",
+            paramStart[1], paramStart[2], paramStart[3], paramStart[4],"\n")
+      }
+      ind <- c(1, 2, 5, 3, 4)
+      tryOpt <- try(optOut <-
+                    nlminb(start = paramStart, llfunc, NULL,
+                           lower = c(-Inf,eps,-Inf,eps),
+                           control = controlNLMINB, ...),
+                    silent = silent)
+      if (class(tryOpt) == "try-error"){
+        errMessage <- unclass(tryOpt)
+      } else {
+        optOut <- tryOpt
+      }
+    }
+
+    if (method == "constrOptim") {
+      if (!silent){
+        cat("paramStart =",
+            paramStart[1], paramStart[2], paramStart[3], paramStart[4],"\n")
+        cat("Feasible?\n")
+        print((paramStart%*%diag(c(0,1,0,1))- c(0,0,0,0)) >= 0)
+      }
+      tryOpt <- try(optOut <-
+                    constrOptim(theta = paramStart, llfunc, NULL,
+                           ui = diag(c(0,1,0,1)), ci = c(-1e+99,0,-1e+99,0),
+                           control = controlCO, ...),
+                    silent = silent)
+      if (class(tryOpt) == "try-error"){
+        errMessage <- unclass(tryOpt)
+      } else {
+        optOut <- tryOpt
+      }
+    }
+  } # end criterion == "MLE"
+
+  ## Prepare to return results
+  if (errMessage == ""){
+    param <- as.numeric(optOut[[ind[1]]])[1:4]       # parameter values
+
+    if (!(method %in% c("L-BFGS-B","nlminb","constrOptim"))){
+      param <- hyperbChangePars(1, 2,
+                 param = c(param[1], exp(param[2]), param[3], exp(param[4])))
+    } else {
+      param <- hyperbChangePars(1, 2, param = param)
+    }
+    names(param) <- c("mu", "delta", "alpha", "beta")
+
+    maxLik <- -(as.numeric(optOut[[ind[2]]]))        # maximum likelihood
+    conv <- as.numeric(optOut[[ind[4]]])             # convergence
+    iter <- as.numeric(optOut[[ind[3]]])[1]          # iterations
+  } else {
+    optOut <- NULL
+    param <- NULL
+    maxLik <- NULL
+    conv <- NULL
+    iter <- NULL
   }
 
-  fitResults <- list(param = param, maxLik = maxLik,
-                     hessian = if (hessian) opOut$hessian else NULL,
+  ## Change paramStart back to the primary parameter set version normal scale
+  if (!(method %in% c("L-BFGS-B","nlminb","constrOptim"))){
+    paramStart <- hyperbChangePars(1, 2,
+                    param = c(paramStart[1], exp(paramStart[2]),
+                              paramStart[3], exp(paramStart[4])))
+  } else {
+    paramStart <- hyperbChangePars(1, 2, param = paramStart)
+  }
+
+  fitResults <- list(param = param, maxLik = maxLik, criterion = criterion,
                      method = method, conv = conv, iter = iter,
                      obs = x, obsName = xName, paramStart = paramStart,
                      svName = svName, startValues = startValues,
                      breaks = breaks, midpoints = midpoints,
-                     empDens = empDens)
+                     empDens = empDens, errMessage = errMessage,
+                     optOut = optOut)
 
   class(fitResults) <- c("hyperbFit", "distFit")
 
@@ -145,14 +225,15 @@ hyperbFit <- function(x, freq = NULL, breaks = NULL, paramStart = NULL,
   if (plots)
     plot.hyperbFit(fitResults, ...)
 
-  fitResults
+  return(fitResults)
 } ## End of hyperbFit()
 
 
 ### Function to print object of class hyperbFit
+### CYD 01/04/10
 ### DJS 11/08/06
-print.hyperbFit <- function(x,
-                            digits = max(3, getOption("digits") - 3), ...) {
+print.hyperbFit <-
+  function(x, digits = max(3, getOption("digits") - 3), ...) {
 
   if (! "hyperbFit" %in% class(x))
     stop("Object must belong to class hyperbFit")
@@ -162,6 +243,7 @@ print.hyperbFit <- function(x,
   print.default(format(x$param, digits = digits),
                 print.gap = 2, quote = FALSE)
   cat("Likelihood:        ", x$maxLik, "\n")
+  cat("criterion :        ", x$criterion , "\n")
   cat("Method:            ", x$method, "\n")
   cat("Convergence code:  ", x$conv, "\n")
   cat("Iterations:        ", x$iter, "\n")
@@ -237,10 +319,10 @@ coef.hyperbFit <- function(object, ...) {
 }
 
 vcov.hyperbFit <- function(object, ...) {
-
-  if (is.null(object$hessian))
-    stop("hyperbFit must be run again with the hessian parameter set to TRUE")
-
-  varcov <- solve(object$hessian)
+  obs <- object$obs
+  param <- object$param
+  hessian <- hyperbHessian(obs, param, hessianMethod= "exact",
+                           whichParam = 2)
+  varcov <- solve(hessian)
   varcov
 }
