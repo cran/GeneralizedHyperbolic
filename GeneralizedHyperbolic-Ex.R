@@ -6,6 +6,60 @@ library('GeneralizedHyperbolic')
 
 assign(".oldSearch", search(), pos = 'CheckExEnv')
 cleanEx()
+nameEx("ArkansasRiver")
+### * ArkansasRiver
+
+flush(stderr()); flush(stdout())
+
+### Name: ArkansasRiver
+### Title: Soil Electrical Conductivity
+### Aliases: ArkansasRiver
+### Keywords: datasets
+
+### ** Examples
+
+data(ArkansasRiver)
+lapply(ArkansasRiver, summary)
+upstream <- ArkansasRiver[[1]]
+downstream <- ArkansasRiver[[2]]
+## Fit normal inverse Gaussian
+## Hyperbolic can also be fitted but fit is not as good
+fitUpstream <- nigFit(upstream)
+summary(fitUpstream)
+par(mfrow = c(2,2))
+plot(fitUpstream)
+fitDownstream <- nigFit(downstream)
+summary(fitDownstream)
+plot(fitDownstream)
+par(mfrow = c(1,1))
+## Combined plot to compare
+## Reproduces Figure 3 from Morway and Gates (2011)
+hist(upstream, col = "grey", xlab = "", ylab = "", cex.axis = 1.25,
+     main = "", breaks = seq(0,20, by = 1), xlim = c(0,15), las = 1,
+     ylim = c(0,0.5), freq = FALSE)
+param <- coef(fitUpstream)
+nigDens <- function(x) dnig(x, param = param)
+curve(nigDens, 0, 15, n = 201, add = TRUE,
+      ylab = NULL, col = "red", lty = 1, lwd = 1.7)
+
+hist(downstream, add = TRUE, col = "black", angle = 45, density = 15,
+     breaks = seq(0,20, by = 1), freq = FALSE)
+param <- coef(fitDownstream)
+nigDens <- function(x) dnig(x, param = param)
+curve(nigDens, 0, 15, n = 201, add = TRUE,
+      ylab = NULL, col = "red", lty = 1, lwd = 1.7)
+
+mtext(expression(EC[e]), side = 1, line = 3, cex = 1.25)
+mtext("Frequency", side = 2, line = 3, cex = 1.25)
+legend(x = 7.5, y = 0.250, c("Upstream Region","Downstream Region"),
+       col = c("black","black"), density = c(NA,25),
+       fill = c("grey","black"), angle = c(NA,45),
+       cex = 1.25, bty = "n", xpd = TRUE)
+
+
+
+graphics::par(get("par.postscript", pos = 'CheckExEnv'))
+cleanEx()
 nameEx("SandP500")
 ### * SandP500
 
@@ -405,6 +459,37 @@ for (i in 1:nrow(ghypSmallParam)) {
   print(difference)
 }
 
+
+
+
+cleanEx()
+nameEx("ghypScale")
+### * ghypScale
+
+flush(stderr()); flush(stdout())
+
+### Name: ghypScale
+### Title: Rescale a generalized hyperbolic distribution
+### Aliases: ghypScale
+### Keywords: distribution
+
+### ** Examples
+
+param <- c(2,10,0.1,0.07,-0.5) # a normal inverse Gaussian
+ghypMean(param = param)
+ghypVar(param = param)
+## convert to standardized parameters
+(newParam <- ghypScale(0, 1, param = param))
+ghypMean(param = newParam)
+ghypVar(param = newParam)
+
+## try some other mean and sd
+(newParam <- ghypScale(1, 1, param = param))
+ghypMean(param = newParam)
+sqrt(ghypVar(param = newParam))
+(newParam <- ghypScale(10, 2, param = param))
+ghypMean(param = newParam)
+sqrt(ghypVar(param = newParam))
 
 
 
@@ -879,6 +964,34 @@ for (i in 1:nrow(hyperbSmallParam)) {
 
 
 cleanEx()
+nameEx("hyperblm")
+### * hyperblm
+
+flush(stderr()); flush(stdout())
+
+### Name: hyperblm
+### Title: Fitting Linear Models with Hyperbolic Errors
+### Aliases: hyperblm print.hyperblm coef.hyperblm plot.hyperblm
+
+### ** Examples
+
+## stackloss data example
+
+ airflow <- stackloss[, 1]
+ temperature <- stackloss[, 2]
+ acid <- stackloss[, 3]
+ stack <- stackloss[, 4]
+
+ hyperblm.fit <- hyperblm(stack ~ airflow + temperature + acid,
+                          tolerance = 1e-11)
+
+ coef.hyperblm(hyperblm.fit)
+ plot.hyperblm(hyperblm.fit, breaks = 20)
+ summary.hyperblm(hyperblm.fit, hessian = FALSE)
+
+
+
+cleanEx()
 nameEx("mamquam")
 ### * mamquam
 
@@ -1312,6 +1425,35 @@ dataVector <- rhyperb(500, param = param)
 fit <- hyperbFit(dataVector, method = "BFGS")
 print(fit)
 summary(fit, hessian = TRUE)
+
+
+
+cleanEx()
+nameEx("summary.hyperblm")
+### * summary.hyperblm
+
+flush(stderr()); flush(stdout())
+
+### Name: summary.hyperblm
+### Title: Summary Output of Hyperbolic Regression
+### Aliases: summary.hyperblm print.summary.hyperblm
+
+### ** Examples
+
+## stackloss data example
+
+# airflow <- stackloss[, 1]
+# temperature <- stackloss[, 2]
+# acid <- stackloss[, 3]
+# stack <- stackloss[, 4]
+
+# hyperblm.fit <- hyperblm(stack ~ airflow + temperature + acid,
+#                          tolerance = 1e-11)
+
+# coef.hyperblm(hyperblm.fit)
+# plot.hyperblm(hyperblm.fit, breaks = 20)
+# summary.hyperblm(hyperblm.fit, hessian = FALSE)
+
 
 
 

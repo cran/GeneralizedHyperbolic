@@ -32,10 +32,9 @@ dgig <- function(x, chi = 1, psi = 1, lambda = 1,
 ###
 ### DJS 9/8/2010
 pgig <- function(q, chi = 1, psi = 1, lambda = 1,
-                    param = c(chi,psi,lambda), log.p = FALSE,
-                    lower.tail = TRUE,
+                    param = c(chi,psi,lambda), lower.tail = TRUE,
                     ibfTol = .Machine$double.eps^(0.85),
-                    nmax = 100) {
+                    nmax = 200) {
 
   ## check parameters
   parResult <- gigCheckPars(param)
@@ -44,9 +43,6 @@ pgig <- function(q, chi = 1, psi = 1, lambda = 1,
 
   if (case == "error")
     stop(errMessage)
-  if (log.p){
-    stop("log.p = TRUE option not yet implemented")
-  }
 
   param <- as.numeric(param)
   chi <- param[1]
@@ -77,10 +73,10 @@ pgig <- function(q, chi = 1, psi = 1, lambda = 1,
 ### qgig using pgig based on incomplete Bessel function
 ### David Scott 09/08/2010
 qgig <- function(p, chi = 1, psi = 1, lambda = 1,
-                 param = c(chi, psi, lambda),  log.p = FALSE,
+                 param = c(chi, psi, lambda),
                  lower.tail = TRUE, method = c("spline", "integrate"),
                  nInterpol = 501, uniTol = 10^(-7),
-                 ibfTol = .Machine$double.eps^(0.85), nmax = 90, ...){
+                 ibfTol = .Machine$double.eps^(0.85), nmax =200, ...){
 
   ## check parameters
   parResult <- gigCheckPars(param)
@@ -89,8 +85,10 @@ qgig <- function(p, chi = 1, psi = 1, lambda = 1,
 
   if (case == "error")
     stop(errMessage)
-  if (log.p){
-    stop("log.p option not yet implemented")
+
+  if(!lower.tail){
+      p <- 1 - p
+      lower.tail == TRUE
   }
 
   method <- match.arg(method)
@@ -170,8 +168,7 @@ qgig <- function(p, chi = 1, psi = 1, lambda = 1,
 
     if (length(extreme) > 0){
       quant[extreme] <- qgig(p[extreme], param = param,
-                             lower.tail = lower.tail, log.p = log.p,
-                             method = "integrate",
+                             lower.tail = lower.tail, method = "integrate",
                              nInterpol = nInterpol, uniTol = uniTol,
                              ibfTol = ibfTol, ...)
     }

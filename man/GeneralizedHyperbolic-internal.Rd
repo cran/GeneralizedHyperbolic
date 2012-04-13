@@ -13,7 +13,7 @@
 \alias{dshyperb}
 \alias{hyperbFitStand}
 \alias{hyperbFitStandStart}
-\alias{ghypScale}
+\alias{hyperblmFit}
 
 
 \title{Internal Generalized Hyperbolic Functions}
