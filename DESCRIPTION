@@ -1,5 +1,5 @@
 Package: GeneralizedHyperbolic
-Version: 0.8-0
+Version: 0.8-1
 Date: 2012-04-13
 Title: The Generalized Hyperbolic Distribution
 Author: David Scott <d.scott@auckland.ac.nz>
@@ -23,5 +23,5 @@ URL: http://www.r-project.org
 Repository: CRAN
 Repository/R-Forge/Project: rmetrics
 Repository/R-Forge/Revision: 4411
-Date/Publication: 2012-04-13 06:07:52
-Packaged: 2012-04-13 04:12:15 UTC; dsco036
+Date/Publication: 2012-04-15 14:59:18
+Packaged: 2012-04-15 11:17:19 UTC; dsco036

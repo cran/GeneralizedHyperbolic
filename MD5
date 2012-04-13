@@ -1,5 +1,5 @@
 b8f1e81b0ba784b0f74323591491bca4 *ChangeLog
-30f2f7a13e441ded1b5056d958f3577c *DESCRIPTION
+e57550941a8c0dbf9757119b9963ca7e *DESCRIPTION
 6970479ed15e8cf936d0c5e5efbfc18d *GeneralizedHyperbolic-Ex.R
 58fcf25ad4f1269940345eda962134b0 *NAMESPACE
 07e8b56ac88664fbb127e5283babee73 *NEWS
@@ -83,7 +83,7 @@ e34935c337226434070d4a8e596436d4 *inst/unitTests/runit.ghypScale.R
 2350b6be70be904ccdf52940a89ddd44 *inst/unitTests/runit.ghypStandPars.R
 1824c7d831d362d68b0afae45cad6a26 *inst/unitTests/runit.gigFit.R
 3fa1681359cb30cb79456e5dea99531c *inst/unitTests/runit.pgig.R
-365a62b34a4a31d7a28188fe148d6d92 *inst/unitTests/runit.qghyp.R
+ba0260b63edc52b99682020aa493abe8 *inst/unitTests/runit.qghyp.R
 5ccf4b6802189a7104b73a47ad630a13 *inst/unitTests/runit.qgig.R
 b5290f7ef80313d87c6fb9d2db724fa5 *man/ArkansasRiver.Rd
 31aed58b0faff1b498be4f23f7755b44 *man/GeneralizedHyperbolic-internal.Rd
@@ -101,7 +101,7 @@ eb7ea1da9e4a0378b2bb77a0ccb2b75c *man/ghypCheckPars.Rd
 b4f3a81e3d3253b5a62c3f1e6184b175 *man/ghypMeanVarMode.Rd
 b97e76e5dcffc065aaaca1c85d948eeb *man/ghypMom.Rd
 15a2df3a6e6095271944077470b06e83 *man/ghypParam.Rd
-62f22618bb9ec96102aef9cfb9c2081e *man/ghypScale.Rd
+1adfd4e6d79f4af1d703dea45e73cecc *man/ghypScale.Rd
 20ab4845c7f0a723ad865ef2f6ba1522 *man/gigCalcRange.Rd
 36f48214950e0db47ef33ffb63cf036d *man/gigChangePars.Rd
 8eaea0424ee54e8145ceb3e6fac7397b *man/gigCheckPars.Rd
