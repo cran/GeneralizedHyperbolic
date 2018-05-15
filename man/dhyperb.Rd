@@ -73,7 +73,7 @@ ddhyperb(x, mu = 0, delta = 1, alpha = 1, beta = 0,
 \details{
   The hyperbolic distribution has density
 
-  \deqn{f(x)=\frac{1}{2\sqrt{1+\pi^2}K_1(\zeta)} %
+  \deqn{f(x)=\frac{1}{2\delta\sqrt{1+\pi^2}K_1(\zeta)} %
     e^{-\zeta[\sqrt{1+\pi^2}\sqrt{1+(\frac{x-\mu}{\delta})^2}-%
     \pi\frac{x-\mu}{\delta}]}}{ %
   f(x)=1/(2 sqrt(1+pi^2) K_1(zeta)) %
@@ -162,7 +162,7 @@ curve(dhyperb(x, param = param), range(dataVector)[1], range(dataVector)[2],
       n = 500)
 hist(dataVector, freq = FALSE, add =TRUE)
 title("Density and Histogram\n of the Hyperbolic Distribution")
-logHist(dataVector, main =
+DistributionUtils::logHist(dataVector, main =
         "Log-Density and Log-Histogram\n of the Hyperbolic Distribution")
 curve(log(dhyperb(x, param = param)), add = TRUE,
       range(dataVector)[1], range(dataVector)[2], n = 500)
