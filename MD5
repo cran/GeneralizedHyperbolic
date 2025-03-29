@@ -1,6 +1,6 @@
-c89f3cb3bf5d6836fd4d379581e58d26 *ChangeLog
-afcd85e0d7e6ef3601c7832016f2d2ef *DESCRIPTION
-db21636e4444c731a1feea849cc425b9 *NAMESPACE
+0a1d5c0a4bd449ee3c4860f89cf3f337 *ChangeLog
+32c7039ccef6430d16b1486cbb0b56fb *DESCRIPTION
+c40b7e585327bf83b09c9fd1a39e8174 *NAMESPACE
 e3ad37248ff6c14458cc1fecb7a43e5f *R/RLambda.R
 1b0c83b18970afbd1208e13874965c36 *R/dghyp.R
 fb03ce1e280c53fc06467191cf34b3da *R/dgig.R
@@ -139,7 +139,7 @@ d54ee0a7b48a30204dbe5d4a1f3b810a *man/qqskewlap.Rd
 4104e1a2dbca77e3dd799b514956a779 *man/resistors.Rd
 5d6e03db7a40b7499fe4e90e9773df6c *man/summary.gigFit.Rd
 68bf8d4850486049dbfcc7db4e9fc8ae *man/summary.hyperbFit.Rd
-ba1668780801f20c6c52f898cfd672a4 *man/summary.hyperblm.Rd
+d74c1433c8554246284bebc12ea57342 *man/summary.hyperblm.Rd
 c1010d29175eff3e0d43ed40bb6723ab *man/summary.nigFit.Rd
 6b14055edaac2cef5a60e80bcff6b075 *man/traffic.Rd
 d92e2b9b3f8ee175a169a2e20bdde2d1 *tests/doRUnit.R
